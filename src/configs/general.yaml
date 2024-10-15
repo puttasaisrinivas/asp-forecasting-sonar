@@ -1,0 +1,156 @@
+
+DATA:
+  # Input Datasets for ASP Forecasting Model
+  master_data: edp_psas_di_usp_gold.t_asp_mstr
+  asp_data: edp_psas_di_usp_gold.t_asp_cms_prc
+  ep_data: edp_psas_di_usp_gold.t_asp_ep_mkt_evnts
+  lst_selected_products: edp_psas_di_usp_silver.t_asp_priority_jcodes
+  lst_prioritized_products: edp_psas_di_usp_silver.t_asp_priority_jcodes
+  forecast_months: 24
+  files_location: /Workspace/Shared/asp-forecasting/data/
+
+MODEL_FEATURES:
+  MASTER_DATA_FEATURES:
+    ORDERED_COLUMNS:
+      # These are the specific columns from the master dataset, in order, that are used as input features for the model.
+      - "J_CODE"
+      - "CAL_DT"
+      - "ASP_MTH"
+      - "PROD_NAME"
+      - "PROD_SGMNT"
+      - "ASP_PRC"
+      - "CODE_DSG"
+      - "TNTV_LAUNCH_DT"
+      - "TNTV_GNRC_LAUNCH_DT"
+      - "PATENT_EXPRY"
+      - "DISEASE_ST"
+      - "THERA_CLS_DSCR"
+      - "PROD_HIER1"
+      - "PROD_HIER2"
+      - "PROD_HIER3"
+      - "MSPN_DSG_FRM"
+      - "MSPN_ROA"
+      - "USC5_DSCR"
+
+    DATE_COLUMNS:
+      # These are the columns that contain date-based information from the master dataset, which are essential for time-series modeling.
+      - "CAL_DT"
+      - "TNTV_GNRC_LAUNCH_DT"
+      - "PATENT_EXPRY"
+      - "TNTV_LAUNCH_DT"
+
+  GENERIC_PRODUCT:
+    # Configuration for predicting the growth in ASP (Average Selling Price) for generic products.
+      TARGET: ASP_GROWTH
+      WINDOW_SIZE: 2
+      STATIC_COLUMNS:
+        - PROD_NAME
+        - THERA_CLS_DSCR
+        - DISEASE_ST
+      CATEGORICAL_COLUMNS:
+      - "THERA_CLS_DSCR"
+      - "DISEASE_ST"
+      - "PROD_HIER1"
+
+  NON_GENERIC_PRODUCT:
+    # Configuration for predicting the ASP (Average Selling Price) for non-generic or brand-name products.
+      TARGET: ASP_TRUE
+      WINDOW_SIZE: 24
+      STATIC_COLUMNS:
+        - PROD_NAME
+        - THERA_CLS_DSCR
+        - MSPN_DSG_FRM
+        - MSPN_ROA
+        - USC5_DSCR
+        - DISEASE_ST
+      CATEGORICAL_COLUMNS:
+        - "THERA_CLS_DSCR"
+        - "MSPN_DSG_FRM"
+        - "MSPN_ROA"
+        - "USC5_DSCR"
+        - "DISEASE_ST"
+        - "PROD_HIER1"
+
+  EP_DATA_FEATURES:
+    # Configuration for EP data features used in the model
+    COLUMNS:
+      - CMPNY
+      - PROD_NAME
+      - GNRC_NAME
+      - MCHNSM_OF_ACTN
+      - PROPRIETARY_L1
+      - INDCTN_L3
+      - USA_INDCTN_STATUS_CURR
+      - FRST_LAUNCH_USA
+      - PATENT_EXPRY
+      - TNTV_GNRC_LAUNCH_DT
+      - TNTV_LAUNCH_DT 
+      - J_CODE
+
+    PROCESSED_EP_DATA_COLUMNS:
+      # Processed columns derived from EP data for model input
+      - J_CODE
+      - CAL_DT
+      - TIME_SINCE_LAST_COMP_LAUNCH
+      - TIME_TO_NEXT_COMP_LAUNCH 
+      - TIME_SINCE_LAST_LOE
+      - TIME_TO_NEXT_LOE
+      - TIME_SINCE_SAME_CLASS_LAUNCH 
+
+    AVAILABLE_CODES:
+      # List of product codes available in the EP dataset
+      - "J8501" 
+      - "J7613"
+      - "J8521"
+      - "J9070"
+
+    UNAVAILABLE_CODES:
+      # List of product codes unavailable in the EP dataset
+      - "J1453"
+      - "J7620"
+      - "J8520"
+      - "J8530"
+
+    DATE_COLUMNS:
+      # These are the columns that contain date-based information from the EP dataset, which are essential for time-series modeling.
+      - "FRST_LAUNCH_USA"
+      - "PATENT_EXPRY"
+      - "TNTV_GNRC_LAUNCH_DT"
+
+  MARKET_EVENT_FEATURES:
+    # Configuration for market event features used in the model
+    COLUMNS:
+      - "J_CODE"
+      - "ASP_MTH"
+      - "TIME_SINCE_LAST_COMP_LAUNCH"
+      - "TIME_SINCE_LAST_LOE"
+      - "TIME_SINCE_SAME_CLASS_LAUNCH"
+
+
+OUTLIER_MODULE:
+  # Configuration for the outlier detection module
+  FEATURE_INFO_1: 
+    FEATURE_NAME: ASP_PRC
+    DATA_FREQ: Q
+    IMPUTE_METHOD: MA
+
+MLFLOW_CONFIGS:
+  # Configuration for MLflow experiment paths and names for model training and inference
+    EXPERIMENT_PATH_TRAINING: dbfs:/FileStore/asp-scale-training/mlruns
+    EXPERIMENT_PATH_INFERENCE: dbfs:/FileStore/asp-scale-inference/mlruns
+    EXPERIMENT_PATH_INFERENCE_CHALLENGER: dbfs:/FileStore/asp-scale-inference-challenger/mlruns
+    EXPERIMENT_NAME_TRAINING: /Users/sax4t8v@mckesson.com/asp-scale-training
+    EXPERIMENT_NAME_INFERENCE: /Users/sax4t8v@mckesson.com/asp-scale-inference
+    EXPERIMENT_NAME_INFERENCE_CHALLENGER: /Users/sax4t8v@mckesson.com/asp-scale-inference-challenger
+
+OUTPUT:
+  # Output configuration specifying various result tables
+  VALIDATION_TABLE: T_ASP_MODEL_VALIDATION
+  BASELINE_TABLE: T_ASP_BASELINE_LOOKUP
+  CHAMPION_TABLE: T_ASP_FORECAST_INFERENCE
+  CHALLENGER_TABLE: T_ASP_FORECAST_INFERENCE_COMPARISON
+
+
+
+
+
